@@ -51,14 +51,10 @@ class ActiveRecord::Base
     set_primary_key "#{association_id}_id"
 
 
-    # Autobuild method to make a instance of association
-    define_method("#{association_id}_with_autobuild") do
-      send("#{association_id}_without_autobuild") || send("build_#{association_id}")
+    # Override association getter to build the association if it does not exist
+    define_method :"#{association_id}" do
+      super() || (send(:"build_#{association_id}"); super())
     end
-
-  
-    # Set a method chain whith autobuild.
-    alias_method_chain association_id, :autobuild    
 
   
     # bind the before save, this method call the save of association, and
