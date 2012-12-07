@@ -43,8 +43,14 @@ class ActiveRecord::Base
     end
     
     # add an association, and set the foreign key.
-    has_one association_id, :class_name => class_name, :foreign_key => :id, :dependent => :destroy
+    has_one association_id, :class_name => class_name, :foreign_key => :id
 
+    # In case any objects that the 'subclass' needs to destroy depend on the
+    # parent class, we need to destroy the parent after we destroy the child.
+    # If we define `dependent: :destroy` or use a 'before_destroy' callback
+    # the parent will be destroyed before anything referenced by the child
+    # is destroyed. Thus the need for the parent to be the last thing destroyed.
+    after_destroy :destroy_parent
 
     # set the primary key, it' need because the generalized table doesn't have
     # a field ID.
@@ -135,6 +141,12 @@ class ActiveRecord::Base
       end
       association.save
       self["#{association_id}_id"] = association.id
+      true
+    end
+
+    define_method("destroy_parent") do
+      association = send(association_id)
+      association.destroy
       true
     end
   end
